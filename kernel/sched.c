@@ -10,19 +10,36 @@
  * call functions (type getpid(), which just extracts a field from
  * current-task
  */
-#include <linux/sched.h>
-#include <linux/kernel.h>
-#include <linux/sys.h>
-#include <linux/fdreg.h>
-#include <asm/system.h>
-#include <asm/io.h>
-#include <asm/segment.h>
 
+/*调度程序头文件，定义了结构体任务结构task_struct,第1个初始任务的数据
+ *还有一些以宏的形式定义的有关描述符参数设置和获取的嵌入式汇编函数程序
+ * */
+#include <linux/sched.h>  
+/*内核头文件， 含一些内核常用的函数原型定义*/
+#include <linux/kernel.h>
+/*系统调用头文件，含有72个系统调用C函数处理程序，以'sys_'开头*/
+#include <linux/sys.h>
+/*软驱头文件*/
+#include <linux/fdreg.h>
+/*系统头文件。定义了设置或修改描述符/中断门等的嵌入式汇编宏*/
+#include <asm/system.h>
+/*IO头文件。定义硬件端口输入/输出宏汇编语句*/
+#include <asm/io.h>
+/*段操作头文件。定义了有关段寄存器操作的嵌入式汇编函数*/
+#include <asm/segment.h>
+/*信号头文件。定义了有关段寄存器操作的嵌入式汇编函数*/
 #include <signal.h>
 
+/*取信号NR在信号位图中对应位的而机制数值。信号编号 1-32.比如信号
+ *5 的位图树枝 = 1<<(5-) = 16 = 00010000b
+ * */
 #define _S(nr) (1<<((nr)-1))
+/*除了SIGKILL和SIGSTOP信号以外其它都是可阻塞的（...10111111111011111111b）*/
 #define _BLOCKABLE (~(_S(SIGKILL) | _S(SIGSTOP)))
 
+/**
+ * @brief 显示任务号nr的进程号、进程状态和内核堆栈空闲字节数（大约）
+ */
 void show_task(int nr,struct task_struct * p)
 {
 	int i,j = 4096-sizeof(struct task_struct);
@@ -34,15 +51,24 @@ void show_task(int nr,struct task_struct * p)
 	printk("%d (of %d) chars free in kernel stack\n\r",i,j);
 }
 
+/** 
+ * @brief 显示所有任务的任务号、进程号、进程状态和内核堆栈空闲字节数
+ * @param 
+ * @param  
+ * @return     
+ * @see    
+ * @note   
+ */      
 void show_stat(void)
 {
 	int i;
-
+	//NR——TASK是系统能容纳的最大进程数（任务，）
 	for (i=0;i<NR_TASKS;i++)
 		if (task[i])
 			show_task(i,task[i]);
 }
 
+/*定义每个时间片的滴答数*/
 #define LATCH (1193180/HZ)
 
 extern void mem_use(void);
